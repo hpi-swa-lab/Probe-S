@@ -8,9 +8,6 @@ SmalltalkCISpec {
     }
   ],
   #testing : {
-    #categories : [ 'BasicProbes-*' ],
-    #coverage : {
-      #categories : [ 'BasicProbes-*' ]
-    }
+    #categories : [ 'BasicProbes-*' ]
   }
 }
