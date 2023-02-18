@@ -177,10 +177,8 @@ PRBWrapper >> runSimulated: aBlock stoppingIn: compiledCode [
 
 	^ thisContext
 		runSimulated: aBlock
-		contextAtEachStep: [:context | | contextMethod |
-			contextMethod := context method.
-			"potentially optimize by only looking up the bytecode ranges once"
-			contextMethod = compiledCode ifTrue: [
+		contextAtEachStep: [:context |
+			context method = compiledCode ifTrue: [
 				context actualStackSize > 0 ifTrue: [
 					probesAtBytecode do: [:probe | 
 						probe record: context top in: context]].
