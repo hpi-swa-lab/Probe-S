@@ -1,0 +1,15 @@
+SmalltalkCISpec {
+  #loading : [
+    SCIMetacelloLoadSpec {
+      #baseline : 'BasicProbes',
+      #directory : 'packages',
+      #platforms : [ #squeak ]
+    }
+  ],
+  #testing : {
+    #categories : [ 'BasicProbes-*' ],
+    #coverage : {
+      #categories : [ 'BasicProbes-*' ]
+    }
+  }
+}
