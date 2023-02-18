@@ -149,6 +149,22 @@ PRBBytecodeProbeTest >> testSingleBytecodeProbeInStoredBlock [
 ]
 
 { #category : #tests }
+PRBBytecodeProbeTest >> testSingleReturnProbeInMethod [
+
+	| probe result |
+	probe := PRBTestMethodReturnProbe on: combineStringsMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:returnValue | result add: returnValue].
+	probe install.
+
+	PRBClassToBeProbed new oneBlockMethod.
+	
+	self assert: 'cbazyx' equals: result first.
+	self assert: 3 equals: result size.
+]
+
+{ #category : #tests }
 PRBBytecodeProbeTest >> testTwoBeforeProbes [
 
 	| object probe1 probe2 result1 result2 |

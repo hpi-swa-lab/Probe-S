@@ -123,6 +123,15 @@ PRBWrapper >> notifyProbesBeforeInvocationOn: aReceiver with: arguments [
 			with: arguments]
 ]
 
+{ #category : #running }
+PRBWrapper >> notifyProbesOfReturn: returnValue [
+
+	self beforeInvocationProbes do: [:probe |
+		probe 
+			recordReturnOf: self methodReference
+			with: returnValue]
+]
+
 { #category : #'accessing - managing probes' }
 PRBWrapper >> removeBeforeInvocationProbe: probe [
 
@@ -144,12 +153,17 @@ PRBWrapper >> removeBytecodeProbe: probe [
 { #category : #running }
 PRBWrapper >> run: aSelector with: arguments in: aReceiver [
 
+	| returnValue |
 	self shouldRecord ifFalse: [
 		^ self compiledMethod valueWithReceiver: aReceiver arguments: arguments].
 	
 	self notifyProbesBeforeInvocationOn: aReceiver with: arguments.
 	
-	^ self runSimulated: [self compiledMethod valueWithReceiver: aReceiver arguments: arguments]
+	returnValue := self runSimulated: [self compiledMethod valueWithReceiver: aReceiver arguments: arguments].
+	
+	self notifyProbesOfReturn: returnValue.
+	
+	^ returnValue
 ]
 
 { #category : #running }

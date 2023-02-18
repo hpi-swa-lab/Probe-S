@@ -19,5 +19,10 @@ PRBMethodProbe >> installInto: aWrapper [
 
 { #category : #recording }
 PRBMethodProbe >> recordInvocationOf: aMethodReference on: aReceiver with: arguments [
-	self subclassResponsibility.
+	"NOP"
+]
+
+{ #category : #recording }
+PRBMethodProbe >> recordReturnOf: aMethodReference with: returnValue [
+	"NOP"
 ]
