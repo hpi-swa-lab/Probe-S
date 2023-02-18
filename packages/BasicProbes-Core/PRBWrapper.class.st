@@ -169,26 +169,25 @@ PRBWrapper >> run: aSelector with: arguments in: aReceiver [
 { #category : #running }
 PRBWrapper >> runSimulated: aBlock [
 
-	| probesAtBytecode |
+	| probesAtBytecode compiledCodes previousContextMethod |
 	probesAtBytecode := #().
+	compiledCodes := bytecodeProbes keys.
+	previousContextMethod := nil.
 
 	^ thisContext
 		runSimulated: aBlock
-		contextAtEachStep: [:context |
-			"Processor yield.
-			500 milliSeconds wait."
-			"context actualStackSize > 0 ifTrue: [
-				(context top class = Array and: [context isExecutingBlock] and: [context method selector = #wrapBlock:]) ifTrue: [self halt]]."
-			"context actualStackSize > 0 ifTrue: [
-			Transcript showln: context method asString, String space, context pc , String tab, String tab, context top asString]."
+		contextAtEachStep: [:context | | contextMethod |
+			contextMethod := context method.
 			"potentially optimize by only looking up the bytecode ranges once"
-			(bytecodeProbes keys includes: context method) ifTrue: [
+			(compiledCodes includes: contextMethod) ifTrue: [
 				context actualStackSize > 0 ifTrue: [
 					probesAtBytecode do: [:probe | 
 						probe record: context top in: context]].
 				context top isBlock ifTrue: [
 					context push: (self wrapBlock: context pop)].
-				probesAtBytecode := (self bytecodeProbesFor: context method) at: context pc.
+				previousContextMethod = contextMethod ifFalse: [
+					probesAtBytecode := (self bytecodeProbesFor: context method) at: context pc.
+					previousContextMethod := contextMethod].
 				context markQuickStep]].
 ]
 
