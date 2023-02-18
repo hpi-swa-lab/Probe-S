@@ -159,7 +159,9 @@ PRBWrapper >> run: aSelector with: arguments in: aReceiver [
 	
 	self notifyProbesBeforeInvocationOn: aReceiver with: arguments.
 	
-	returnValue := self runSimulated: [self compiledMethod valueWithReceiver: aReceiver arguments: arguments].
+	returnValue := self 
+		runSimulated: [self compiledMethod valueWithReceiver: aReceiver arguments: arguments]
+		stoppingIn: self compiledMethod.
 	
 	self notifyProbesOfReturn: returnValue.
 	
@@ -167,27 +169,24 @@ PRBWrapper >> run: aSelector with: arguments in: aReceiver [
 ]
 
 { #category : #running }
-PRBWrapper >> runSimulated: aBlock [
+PRBWrapper >> runSimulated: aBlock stoppingIn: compiledCode [
 
-	| probesAtBytecode compiledCodes previousContextMethod |
+	| probesAtBytecode bytecodeStops |
 	probesAtBytecode := #().
-	compiledCodes := bytecodeProbes keys.
-	previousContextMethod := nil.
+	bytecodeStops := self bytecodeProbesFor: compiledCode.
 
 	^ thisContext
 		runSimulated: aBlock
 		contextAtEachStep: [:context | | contextMethod |
 			contextMethod := context method.
 			"potentially optimize by only looking up the bytecode ranges once"
-			(compiledCodes includes: contextMethod) ifTrue: [
+			contextMethod = compiledCode ifTrue: [
 				context actualStackSize > 0 ifTrue: [
 					probesAtBytecode do: [:probe | 
 						probe record: context top in: context]].
 				context top isBlock ifTrue: [
 					context push: (self wrapBlock: context pop)].
-				previousContextMethod = contextMethod ifFalse: [
-					probesAtBytecode := (self bytecodeProbesFor: context method) at: context pc.
-					previousContextMethod := contextMethod].
+				probesAtBytecode := bytecodeStops at: context pc.
 				context markQuickStep]].
 ]
 
@@ -230,15 +229,17 @@ PRBWrapper >> wrapBlock: aBlockClosure [
 		^ aBlockClosure].
 	
 	aBlockClosure numArgs = 0 ifTrue: [
-		^ [self runSimulated: [aBlockClosure value]]].
+		^ [self 
+				runSimulated: [aBlockClosure value]
+				stoppingIn: aBlockClosure method]].
 	aBlockClosure numArgs = 1 ifTrue: [
-		^ [:arg1 | self runSimulated: [aBlockClosure value: arg1]]].
+		^ [:arg1 | self runSimulated: [aBlockClosure value: arg1] stoppingIn: aBlockClosure method]].
 	aBlockClosure numArgs = 2 ifTrue: [
-		^ [:arg1 :arg2 | self runSimulated: [aBlockClosure value: arg1 value: arg2]]].
+		^ [:arg1 :arg2 | self runSimulated: [aBlockClosure value: arg1 value: arg2] stoppingIn: aBlockClosure method]].
 	aBlockClosure numArgs = 3 ifTrue: [
-		^ [:arg1 :arg2 :arg3 | self runSimulated: [aBlockClosure value: arg1 value: arg2 value: arg3]]].
+		^ [:arg1 :arg2 :arg3 | self runSimulated: [aBlockClosure value: arg1 value: arg2 value: arg3] stoppingIn: aBlockClosure method]].
 	aBlockClosure numArgs = 4 ifTrue: [
-		^ [:arg1 :arg2 :arg3 :arg4 | self runSimulated: [aBlockClosure value: arg1 value: arg2 value: arg3 value: arg4]]].
+		^ [:arg1 :arg2 :arg3 :arg4 | self runSimulated: [aBlockClosure value: arg1 value: arg2 value: arg3 value: arg4] stoppingIn: aBlockClosure method]].
 
 
 ]
