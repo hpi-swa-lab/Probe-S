@@ -1,4 +1,5 @@
 OrderedDictionary {
 	'packages/BasicProbes-Core' : #SquotTonelSerializer,
-	'packages/BasicProbes-Tests' : #SquotTonelSerializer
+	'packages/BasicProbes-Tests' : #SquotTonelSerializer,
+	'packages/BaselineOfBasicProbes' : #SquotTonelSerializer
 }
