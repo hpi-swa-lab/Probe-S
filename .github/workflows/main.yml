@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         # Select platform(s)
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest ]
         # Select compatible Smalltalk image(s)
         smalltalk: [ Squeak64-trunk ]
     name: ${{ matrix.smalltalk }} on ${{ matrix.os }}
