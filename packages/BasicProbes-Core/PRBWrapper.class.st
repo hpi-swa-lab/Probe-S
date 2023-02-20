@@ -23,7 +23,17 @@ PRBWrapper >> at: concretePC for: compiledCode addBytecodeProbe: probe [
 		
 	(self bytecodeProbesFor: compiledCode)
 		at: concretePC 
-		put: ((self bytecodeProbesFor: compiledCode) at: concretePC) , {probe}
+		put: ((self bytecodeProbesFor: compiledCode) at: concretePC) , {probe}.
+		
+	compiledCode isCompiledBlock ifTrue: [ | currentBlock |
+		"ensure that we will simulate all other compiled codes 
+		up to the block"
+		currentBlock := compiledCode outerCode.
+		[self ensureBytecodeProbesFor: currentBlock.]
+			doWhileTrue: [
+				currentBlock isCompiledBlock and: [
+					currentBlock := currentBlock outerCode.
+					currentBlock ~= compiledCode method]]].
 
 	
 ]
@@ -37,7 +47,7 @@ PRBWrapper >> beforeInvocationProbes [
 { #category : #private }
 PRBWrapper >> bytecodeProbesFor: compiledCode [
 
-	^ bytecodeProbes at: compiledCode ifAbsentPut: [Array new: 1000 withAll: #()]
+	^ bytecodeProbes at: compiledCode
 ]
 
 { #category : #private }
@@ -55,13 +65,27 @@ PRBWrapper >> doesNotUnderstand: aMessage [
 ]
 
 { #category : #private }
+PRBWrapper >> ensureBytecodeProbesFor: compiledCode [
+
+	bytecodeProbes at: compiledCode ifAbsentPut: [Array new: 1000 withAll: #()]
+
+]
+
+{ #category : #private }
 PRBWrapper >> ensureBytecodeProbesFor: compiledCode fits: abstractPC [
 
+	self ensureBytecodeProbesFor: compiledCode.
 	(self bytecodeProbesFor: compiledCode) size < abstractPC
 		ifTrue: [ | newArray |
 			newArray := Array new: abstractPC withAll: #(). 
 			newArray copyFrom: bytecodeProbes.
 			bytecodeProbes at: compiledCode put: newArray].
+]
+
+{ #category : #private }
+PRBWrapper >> hasBytecodeProbesFor: compiledCode [
+
+	^ bytecodeProbes includesKey: compiledCode
 ]
 
 { #category : #'initialize-release' }
@@ -224,6 +248,11 @@ PRBWrapper >> wrapBlock: aBlockClosure [
 
 	aBlockClosure homeMethod selector = #wrapBlock: ifTrue: [
 		"already wrapped"
+		^ aBlockClosure].
+	
+	(self hasBytecodeProbesFor: aBlockClosure method) ifFalse: [
+		"nothing to probe and no probed child code 
+			-> nothing to simulate"
 		^ aBlockClosure].
 	
 	aBlockClosure numArgs = 0 ifTrue: [
