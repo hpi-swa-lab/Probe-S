@@ -4,7 +4,7 @@ Class {
 	#category : #'BasicProbes-Tests'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #scripts }
 PRBBenchmarks >> bouncingAtomsMorphBenchmark [
 	"The following is a benchmark script intended for execution in a workspace."
 

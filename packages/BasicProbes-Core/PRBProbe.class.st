@@ -20,7 +20,7 @@ PRBProbe >> methodReference: anObject [
 	methodReference := anObject.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 PRBProbe >> probeId [
 
 	^ self
