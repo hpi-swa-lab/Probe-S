@@ -11,6 +11,24 @@ PRBClassToBeProbed >> combineStrings: string1 and: string2 [
 ]
 
 { #category : #fixtures }
+PRBClassToBeProbed >> exceptionMethod [
+
+	| result |
+	result := PRBException signal.
+	^ result
+]
+
+{ #category : #fixtures }
+PRBClassToBeProbed >> exceptionUnwindMethod [
+
+	| exception result |
+	exception := PRBException new.
+	result := [exception signal]
+		ensure: [exception tag: self].
+	^ result
+]
+
+{ #category : #fixtures }
 PRBClassToBeProbed >> nestedBlockMethod [
 
 	| result string1 string2 |

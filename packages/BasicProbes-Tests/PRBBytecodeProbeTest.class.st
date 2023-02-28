@@ -5,12 +5,14 @@ Class {
 		'storedBlockMethod',
 		'oneBlockMethod',
 		'nestedBlockMethod',
-		'combineStringsMethod'
+		'combineStringsMethod',
+		'exceptionMethod',
+		'exceptionUnwindMethod'
 	],
 	#category : #'BasicProbes-Tests'
 }
 
-{ #category : #utilitiy }
+{ #category : #utility }
 PRBBytecodeProbeTest >> createBytecodeProbeFor: expression in: method [
 
 	| start |
@@ -28,6 +30,8 @@ PRBBytecodeProbeTest >> setUp [
 	storedBlockMethod := PRBClassToBeProbed>>#storedBlockMethod.
 	nestedBlockMethod := PRBClassToBeProbed>>#nestedBlockMethod.
 	combineStringsMethod := PRBClassToBeProbed>>#combineStrings:and:.
+	exceptionMethod := PRBClassToBeProbed>>#exceptionMethod.
+	exceptionUnwindMethod := PRBClassToBeProbed>>#exceptionUnwindMethod.
 ]
 
 { #category : #running }
@@ -37,7 +41,268 @@ PRBBytecodeProbeTest >> tearDown [
 	PRBClassToBeProbed methodDictionary at: #storedBlockMethod put: storedBlockMethod.
 	PRBClassToBeProbed methodDictionary at: #nestedBlockMethod put: nestedBlockMethod.
 	PRBClassToBeProbed methodDictionary at: #combineStrings:and: put: combineStringsMethod.
+	PRBClassToBeProbed methodDictionary at: #exceptionMethod put: exceptionMethod.
+	PRBClassToBeProbed methodDictionary at: #exceptionUnwindMethod put: exceptionUnwindMethod.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBeforeExceptionResume [
+
+	| probe result object raised return |
+	probe := PRBTestMethodProbe on: exceptionMethod methodReference.
 	
+	result := OrderedCollection new.
+	probe block: [:receiver :arguments | result add: receiver].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionMethod]
+		on: PRBException do: [:ex |
+			raised := true.
+			ex resume: self].
+	self assert: self equals: return.
+	self assert: raised.
+	
+	self assert: object equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBeforeExceptionReturn [
+
+	| probe result object raised return |
+	probe := PRBTestMethodProbe on: exceptionMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:receiver :arguments | result add: receiver].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionMethod]
+		on: PRBException do: [:ex |
+			raised := true.
+			self].
+	self assert: self equals: return.
+	self assert: raised.
+	
+	self assert: object equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBeforeExceptionUnwindResume [
+
+	| probe result object exception return |
+	probe := PRBTestMethodProbe on: exceptionUnwindMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:receiver :arguments | result add: receiver].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionUnwindMethod]
+		on: PRBException do: [:ex |
+			exception := ex.
+			ex resume: self].
+	self assert: self equals: return.
+	self assert: object equals: exception tag.
+	
+	self assert: object equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBeforeExceptionUnwindReturn [
+
+	| probe result object exception return |
+	probe := PRBTestMethodProbe on: exceptionUnwindMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:receiver :arguments | result add: receiver].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionUnwindMethod]
+		on: PRBException do: [:ex |
+			exception := ex.
+			self].
+	self assert: self equals: return.
+	self assert: object equals: exception tag.
+	
+	self assert: object equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBytecodeExceptionResume [
+
+	| probe result object raised return |
+	probe := self 
+		createBytecodeProbeFor: 'signal' 
+		in: exceptionMethod.
+	
+	result := OrderedCollection new.
+	probe block: [:value | result add: value].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionMethod]
+		on: PRBException do: [:ex |
+			raised := true.
+			ex resume: self].
+	self assert: self equals: return.
+	self assert: raised.
+	
+	self assert: self equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBytecodeExceptionReturn [
+
+	| probe result object raised return |
+	probe := self 
+		createBytecodeProbeFor: 'signal' 
+		in: exceptionMethod.
+	
+	result := OrderedCollection new.
+	probe block: [:value | result add: value].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionMethod]
+		on: PRBException do: [:ex |
+			raised := true.
+			self].
+	self assert: self equals: return.
+	self assert: raised.
+	
+	self assert: result isEmpty.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBytecodeExceptionUnwindResume [
+
+	| probe result object exception return |
+	probe := self 
+		createBytecodeProbeFor: 'signal' 
+		in: exceptionUnwindMethod.
+	
+	result := OrderedCollection new.
+	probe block: [:value | result add: value].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionUnwindMethod]
+		on: PRBException do: [:ex |
+			exception := ex.
+			ex resume: self].
+	self assert: self equals: return.
+	self assert: object equals: exception tag.
+	
+	self assert: self equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testBytecodeExceptionUnwindReturn [
+
+	| probe result object exception return |
+	probe := self 
+		createBytecodeProbeFor: 'signal' 
+		in: exceptionUnwindMethod.
+	
+	result := OrderedCollection new.
+	probe block: [:value | result add: value].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionUnwindMethod]
+		on: PRBException do: [:ex |
+			exception := ex.
+			self].
+	self assert: self equals: return.
+	self assert: object equals: exception tag.
+	
+	self assert: result isEmpty.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testReturnExceptionResume [
+
+	| probe result object raised return |
+	probe := PRBTestMethodReturnProbe on: exceptionMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:returnValue | result add: returnValue].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionMethod]
+		on: PRBException do: [:ex |
+			raised := true.
+			ex resume: self].
+	self assert: self equals: return.
+	self assert: raised.
+	
+	self assert: self equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testReturnExceptionReturn [
+
+	| probe result object raised return |
+	probe := PRBTestMethodReturnProbe on: exceptionMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:returnValue | result add: returnValue].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionMethod]
+		on: PRBException do: [:ex |
+			raised := true.
+			self].
+	self assert: self equals: return.
+	self assert: raised.
+	
+	self assert: result isEmpty.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testReturnExceptionUnwindResume [
+
+	| probe result object exception return |
+	probe := PRBTestMethodReturnProbe on: exceptionUnwindMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:returnValue | result add: returnValue].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionUnwindMethod]
+		on: PRBException do: [:ex |
+			exception := ex.
+			ex resume: self].
+	self assert: self equals: return.
+	self assert: object equals: exception tag.
+	
+	self assert: self equals: result first.
+]
+
+{ #category : #'tests - exceptions' }
+PRBBytecodeProbeTest >> testReturnExceptionUnwindReturn [
+
+	| probe result object exception return |
+	probe := PRBTestMethodReturnProbe on: exceptionUnwindMethod methodReference.
+	
+	result := OrderedCollection new.
+	probe block: [:returnValue | result add: returnValue].
+	probe install.
+	
+	object := PRBClassToBeProbed new.
+	return := [object exceptionUnwindMethod]
+		on: PRBException do: [:ex |
+			exception := ex.
+			self].
+	self assert: self equals: return.
+	self assert: object equals: exception tag.
+	
+	self assert: result isEmpty.
 ]
 
 { #category : #tests }
